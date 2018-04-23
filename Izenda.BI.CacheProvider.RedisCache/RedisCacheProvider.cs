@@ -1,5 +1,6 @@
 ﻿using Izenda.BI.CacheProvider.RedisCache.Constants;
 using Izenda.BI.CacheProvider.RedisCache.Converters;
+using Izenda.BI.CacheProvider.RedisCache.Extensions;
 using Izenda.BI.CacheProvider.RedisCache.Resolvers;
 using Izenda.BI.Framework.Models.ReportDesigner;
 using Newtonsoft.Json;
@@ -8,8 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Threading;
 
 namespace Izenda.BI.CacheProvider.RedisCache
 {
@@ -21,6 +22,8 @@ namespace Izenda.BI.CacheProvider.RedisCache
     public class RedisCacheProvider : ICacheProvider, IDisposable
     {
         private bool _disposed = false;
+        private bool _enableValueCompression = true;
+        private JsonSerializer _serializer;
         private JsonSerializerSettings _serializerSettings = new JsonSerializerSettings();
         private readonly IDatabase _cache;
         private readonly IServer _server;
@@ -29,7 +32,6 @@ namespace Izenda.BI.CacheProvider.RedisCache
         {
             _cache = RedisHelper.Database;
             _server = RedisHelper.Server;
-
             InitSerializer();
         }
 
@@ -53,6 +55,8 @@ namespace Izenda.BI.CacheProvider.RedisCache
 
             _serializerSettings.Converters.Add(new DBServerTypeSupportingConverter());
             _serializerSettings.ContractResolver = resolver;
+
+            _serializer = JsonSerializer.Create(_serializerSettings);
         }
 
         /// <summary>
@@ -62,7 +66,14 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <returns> A json string of the object</returns>
         private string Serialize(object obj)
         {
-            return JsonConvert.SerializeObject(obj, _serializerSettings);
+            string value = JsonConvert.SerializeObject(obj, _serializerSettings);
+
+            if (_enableValueCompression)
+            {
+                value = value.Compress();
+            }
+
+            return value;
         }
 
         /// <summary>
@@ -73,6 +84,22 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <returns>THe deserialized object</returns>
         private T Deserialize<T>(string serialized)
         {
+            if (_enableValueCompression)
+            {
+                using (StreamReader stream = serialized.DecompressToStreamReader())
+                using (JsonReader reader = new JsonTextReader(stream))
+                {
+                    try
+                    {
+                        return _serializer.Deserialize<T>(reader);
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
+                    }
+                }
+            }
+
             return JsonConvert.DeserializeObject<T>(serialized, _serializerSettings);
         }
 

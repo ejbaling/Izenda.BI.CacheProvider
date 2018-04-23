@@ -72,6 +72,7 @@
   <ItemGroup>
     <Compile Include="Constants\AppConstants.cs" />
     <Compile Include="Converters\DBServerTypeSupportingConverter.cs" />
+    <Compile Include="Extensions\StringCompression.cs" />
     <Compile Include="RedisCacheConfiguration.cs" />
     <Compile Include="RedisCacheProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
