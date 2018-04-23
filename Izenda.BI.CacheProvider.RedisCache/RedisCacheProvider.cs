@@ -8,24 +8,20 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
-using System.Threading;
 using System.Linq;
-using Izenda.BI.Framework.CustomAttributes;
-using System.Collections.Concurrent;
-using Izenda.BI.Framework.Constants;
+using System.Threading;
 
 namespace Izenda.BI.CacheProvider.RedisCache
 {
     /// <summary>
     /// Redis cache provider
     /// </summary>
-    #warning The current version of this project will only work with Izenda versions 2.4.4+
+#warning The current version of this project will only work with Izenda versions 2.4.4+
     [Export(typeof(ICacheProvider))]
     public class RedisCacheProvider : ICacheProvider, IDisposable
     {
         private bool _disposed = false;
         private JsonSerializerSettings _serializerSettings = new JsonSerializerSettings();
-        private readonly ReaderWriterLockSlim _lockCache = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         private readonly IDatabase _cache;
         private readonly IServer _server;
 
@@ -89,16 +85,11 @@ namespace Izenda.BI.CacheProvider.RedisCache
         {
             try
             {
-                _lockCache.EnterWriteLock();
                 _cache.StringSet(key, Serialize(value));
             }
             catch (Exception ex)
             {
                 Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
-            }
-            finally
-            {
-                _lockCache.ExitWriteLock();
             }
         }
 
@@ -112,16 +103,11 @@ namespace Izenda.BI.CacheProvider.RedisCache
         {  
             try
             {
-                _lockCache.EnterWriteLock();
                 _cache.StringSet(key, Serialize(value), expiration);
             }
             catch (Exception ex)
             {
                 Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
-            }
-            finally
-            {
-                _lockCache.ExitWriteLock();
             }
         }
 
@@ -169,16 +155,11 @@ namespace Izenda.BI.CacheProvider.RedisCache
         {
             try
             {
-                _lockCache.EnterWriteLock();
                 _cache.KeyDelete(key);
             }
             catch (Exception ex)
             {
                 Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
-            }
-            finally
-            {
-                _lockCache.ExitWriteLock();
             }
         }
 
@@ -192,8 +173,6 @@ namespace Izenda.BI.CacheProvider.RedisCache
 
             try
             {
-                _lockCache.EnterWriteLock();
-
                 foreach (var key in keysToRemove)
                 {
                     _cache.KeyDelete(key);
@@ -202,10 +181,6 @@ namespace Izenda.BI.CacheProvider.RedisCache
             catch (Exception ex)
             {
                 Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
-            }
-            finally
-            {
-                _lockCache.ExitWriteLock();
             }
         }
 
@@ -263,7 +238,6 @@ namespace Izenda.BI.CacheProvider.RedisCache
 
             try
             {
-                _lockCache.EnterWriteLock();
                 if (newValue != null)
                 {
                     _cache.StringSet(key, Serialize(newValue), expiration);
@@ -273,11 +247,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
             {
                 Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
             }
-            finally
-            {
-                _lockCache.ExitWriteLock();
-            }
-
+ 
             return newValue;
         }
 
@@ -296,8 +266,6 @@ namespace Izenda.BI.CacheProvider.RedisCache
             {               
                 try
                 {
-                    _lockCache.EnterWriteLock();
-
                     result = Get<T>(key);
 
                     if (EqualityComparer<T>.Default.Equals(result, default(T)))
@@ -315,10 +283,6 @@ namespace Izenda.BI.CacheProvider.RedisCache
                 catch (Exception ex)
                 {
                     Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
-                }
-                finally
-                {
-                    _lockCache.ExitWriteLock();
                 }
             }
 
@@ -345,7 +309,6 @@ namespace Izenda.BI.CacheProvider.RedisCache
 
             if (disposing)
             {
-                _lockCache.Dispose();
             }
 
             _disposed = true;
