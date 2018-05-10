@@ -196,7 +196,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <param name="pattern">The pattern. </param>
         public void RemoveKeyWithPattern(string pattern)
         {
-            var keysToRemove = _server.Keys(_cache.Database, pattern + "*").ToArray();
+            var keysToRemove = _server.Keys(_cache.Database, $"*{pattern}*").ToArray();
 
             try
             {
