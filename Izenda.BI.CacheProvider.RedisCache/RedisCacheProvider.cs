@@ -52,6 +52,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
             _serializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             _serializerSettings.TypeNameHandling = TypeNameHandling.Objects;
             _serializerSettings.TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Simple;
+            _serializerSettings.ObjectCreationHandling = ObjectCreationHandling.Replace;
 
             _serializerSettings.Converters.Add(new DBServerTypeSupportingConverter());
             _serializerSettings.ContractResolver = resolver;
