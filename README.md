@@ -1,7 +1,7 @@
 # Izenda RedisCacheProvider (v2.0.0)
 
 ## Overview
-This a custom cache provider that utilizes the Redis cache.  
+This is a custom cache provider that utilizes the Redis cache.  
 
 :warning: The current version of this project will only work with Izenda versions 2.4.4+
 
