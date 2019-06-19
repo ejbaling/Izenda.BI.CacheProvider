@@ -7,17 +7,19 @@ using Newtonsoft.Json;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Izenda.BI.Framework.Utility;
+using Izenda.BI.Utility;
+using Izenda.BI.Utility.List;
+using System.Composition;
 
 namespace Izenda.BI.CacheProvider.RedisCache
 {
     /// <summary>
     /// Redis cache provider
     /// </summary>
-#warning The current version of this project will only work with Izenda versions 2.4.4+
     [Export(typeof(ICacheProvider))]
     public class RedisCacheProvider : ICacheProvider, IDisposable
     {
@@ -37,8 +39,17 @@ namespace Izenda.BI.CacheProvider.RedisCache
 
         public RedisCacheProvider(IDatabase cache)
         {
-            _cache = cache;
-            InitSerializer();
+            try
+            {
+                _cache = cache;
+                InitSerializer();
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+            
         }
 
         /// <summary>
@@ -46,18 +57,26 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// </summary>
         private void InitSerializer()
         {
-            var resolver = new IzendaSerializerContractResolver();
-            resolver.Ignore(typeof(ReportPartDefinition), "ReportPartContent");
+            try
+            {
+                var resolver = new IzendaSerializerContractResolver();
+                resolver.Ignore(typeof(ReportPartDefinition), "ReportPartContent");
 
-            _serializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-            _serializerSettings.TypeNameHandling = TypeNameHandling.Objects;
-            _serializerSettings.TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Simple;
-            _serializerSettings.ObjectCreationHandling = ObjectCreationHandling.Replace;
+                _serializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                _serializerSettings.TypeNameHandling = TypeNameHandling.Objects;
+                _serializerSettings.TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Simple;
+                _serializerSettings.ObjectCreationHandling = ObjectCreationHandling.Replace;
 
-            _serializerSettings.Converters.Add(new DBServerTypeSupportingConverter());
-            _serializerSettings.ContractResolver = resolver;
+                _serializerSettings.Converters.Add(new DBServerTypeSupportingConverter());
+                _serializerSettings.ContractResolver = resolver;
 
-            _serializer = JsonSerializer.Create(_serializerSettings);
+                _serializer = JsonSerializer.Create(_serializerSettings);
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
         }
 
         /// <summary>
@@ -128,7 +147,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <param name="value"> The value</param>
         /// <param name="expiration"> The expiration </param>
         public void AddWithExactLifetime(string key, object value, TimeSpan expiration)
-        {  
+        {
             try
             {
                 _cache.StringSet(key, Serialize(value), expiration);
@@ -167,7 +186,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <param name="key">The key</param>
         /// <returns></returns>
         public T Get<T>(string key)
-        {            
+        {
             var result = _cache.StringGet(key);
             if (result.IsNullOrEmpty)
                 return default(T);
@@ -275,7 +294,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
             {
                 Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
             }
- 
+
             return newValue;
         }
 
@@ -291,7 +310,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
             var result = Get<T>(key);
 
             if (EqualityComparer<T>.Default.Equals(result, default(T)))
-            {               
+            {
                 try
                 {
                     result = Get<T>(key);
