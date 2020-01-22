@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Izenda.BI.CacheProvider.RedisCache.Resolvers
+namespace Izenda.BI.CacheProvider.RedisCache.Serializer
 {
     /// <summary>
     /// See here https://stackoverflow.com/questions/13588022/exclude-property-from-serialization-via-custom-attribute-json-net/14510134#14510134
