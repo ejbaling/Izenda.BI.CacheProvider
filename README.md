@@ -1,10 +1,13 @@
-# Izenda RedisCacheProvider (v2.0.0)
+# Izenda RedisCacheProvider (v3.0.0)
 
 ## Overview
 This is a custom cache provider that utilizes the Redis cache.  
 
 :warning: The current version of this project will only work with Izenda versions 2.4.4+
 
+## Breaking Changes in v3.0.0 </h1>  
+v3.0.0 requires additional configuraiton via the Web.config - please see step 4 below. 
+New serialization settings are used and it is recommended to flush all values from the Redis cache before deploying this version.
 
 ## Breaking Changes in v2.0.0 </h1>  
 v2.0.0 of the RedisCacheProvider utilizes compression of the Redis cache values. If you are upgrading to this version from a lesser version, please ensure that you flush all values from the Redis cache before deploying this version.
@@ -45,4 +48,14 @@ v2.0.0 of the RedisCacheProvider utilizes compression of the Redis cache values.
   <redisCacheSettings connectionString="127.0.0.1:6379" additionalOptions="abortConnect=false"/>
   
 ```
-4. Restart the API instance
+
+4. Update the following app settings' keys (izenda.cache.*) in the Web.config of the API instance as detailed below
+```
+    <add key="izenda.cache.data.category" value="Schedule"/>
+    <add key="izenda.cache.system.category" value="Schedule"/>
+    <add key="izenda.cache.data.cachestore" value="RedisCacheStore"/>
+    <add key="izenda.cache.system.cachestore" value="RedisCacheStore"/>
+```
+
+
+5. Restart the API instance
