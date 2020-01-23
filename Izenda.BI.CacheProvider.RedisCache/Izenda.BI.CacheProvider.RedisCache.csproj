@@ -37,22 +37,43 @@
     <Reference Include="Izenda.BI.Cache.Metadata">
       <HintPath>Libs\Izenda.BI.Cache.Metadata.dll</HintPath>
     </Reference>
+    <Reference Include="Izenda.BI.Cache.Schedule">
+      <HintPath>Libs\Izenda.BI.Cache.Schedule.dll</HintPath>
+    </Reference>
     <Reference Include="Izenda.BI.CacheProvider">
       <HintPath>libs\Izenda.BI.CacheProvider.dll</HintPath>
+    </Reference>
+    <Reference Include="Izenda.BI.Core">
+      <HintPath>Libs\Izenda.BI.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Izenda.BI.DataSourceAdapter">
+      <HintPath>Libs\Izenda.BI.DataSourceAdapter.dll</HintPath>
     </Reference>
     <Reference Include="Izenda.BI.Framework, Version=1.24.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>libs\Izenda.BI.Framework.dll</HintPath>
     </Reference>
+    <Reference Include="Izenda.BI.Logic">
+      <HintPath>Libs\Izenda.BI.Logic.dll</HintPath>
+    </Reference>
+    <Reference Include="Izenda.BI.SystemRepository">
+      <HintPath>Libs\Izenda.BI.SystemRepository.dll</HintPath>
+    </Reference>
     <Reference Include="Izenda.BI.Utility, Version=1.24.2.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>libs\Izenda.BI.Utility.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net">
+      <HintPath>Libs\log4net.dll</HintPath>
     </Reference>
     <Reference Include="MethodBoundaryAspect, Version=2.0.113.0, Culture=neutral, PublicKeyToken=296379d5065c9d61, processorArchitecture=MSIL">
       <HintPath>..\packages\MethodBoundaryAspect.Fody.2.0.113\lib\net452\MethodBoundaryAspect.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Quartz">
+      <HintPath>Libs\Quartz.dll</HintPath>
     </Reference>
     <Reference Include="StackExchange.Redis, Version=1.2.6.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\StackExchange.Redis.1.2.6\lib\net45\StackExchange.Redis.dll</HintPath>
@@ -67,6 +88,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Composition.AttributedModel, Version=1.0.31.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Composition.AttributedModel.1.0.31\lib\portable-net45+win8+wp8+wpa81\System.Composition.AttributedModel.dll</HintPath>
     </Reference>
@@ -97,15 +119,17 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Constants\AppConstants.cs" />
-    <Compile Include="Converters\DBServerTypeSupportingConverter.cs" />
-    <Compile Include="Extensions\StringCompression.cs" />
-    <Compile Include="RedisCacheConfiguration.cs" />
+    <Compile Include="Serializer\DBServerTypeSupportingConverter.cs" />
+    <Compile Include="Utilities\StringCompressionExtension.cs" />
+    <Compile Include="RedisCache.cs" />
+    <Compile Include="Utilities\RedisCacheConfiguration.cs" />
+    <Compile Include="RedisCacheSystemStore.cs" />
+    <Compile Include="RedisCacheDataStore.cs" />
     <Compile Include="RedisCacheProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RedisConnectionHelper.cs" />
-    <Compile Include="RedisHelper.cs" />
-    <Compile Include="Resolvers\IzendaSerializerContractResolver.cs" />
+    <Compile Include="RedisCacheStore.cs" />
+    <Compile Include="Utilities\RedisHelper.cs" />
+    <Compile Include="Serializer\IzendaSerializerContractResolver.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="libs\" />

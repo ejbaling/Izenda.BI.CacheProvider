@@ -1,18 +1,8 @@
-﻿using Izenda.BI.CacheProvider.RedisCache.Constants;
-using Izenda.BI.CacheProvider.RedisCache.Converters;
-using Izenda.BI.CacheProvider.RedisCache.Extensions;
-using Izenda.BI.CacheProvider.RedisCache.Resolvers;
-using Izenda.BI.Framework.Models.ReportDesigner;
+﻿using Izenda.BI.CacheProvider.RedisCache.Serializer;
+using Izenda.BI.Framework.Converters;
 using Newtonsoft.Json;
-using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using Izenda.BI.Framework.Utility;
-using Izenda.BI.Utility;
-using Izenda.BI.Utility.List;
 using System.Composition;
 
 namespace Izenda.BI.CacheProvider.RedisCache
@@ -23,147 +13,54 @@ namespace Izenda.BI.CacheProvider.RedisCache
     [Export(typeof(ICacheProvider))]
     public class RedisCacheProvider : ICacheProvider, IDisposable
     {
+        private readonly RedisCache RedisCache;
         private bool _disposed = false;
-        private bool _enableValueCompression = true;
-        private JsonSerializer _serializer;
-        private JsonSerializerSettings _serializerSettings = new JsonSerializerSettings();
-        private readonly IDatabase _cache;
-        private readonly IServer _server;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RedisCacheProvider"/> class
+        /// </summary>
         public RedisCacheProvider()
         {
-            _cache = RedisHelper.Database;
-            _server = RedisHelper.Server;
-            InitSerializer();
+            RedisCache = new RedisCache(new JsonSerializerSettings
+            {
+                DateTimeZoneHandling = DateTimeZoneHandling.Unspecified,
+                NullValueHandling = NullValueHandling.Ignore,
+                ObjectCreationHandling = ObjectCreationHandling.Replace,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Objects,
+                Converters = new List<JsonConverter> { new ReportPartContentConverter(), new DBServerTypeSupportingConverter() }
+            });
         }
 
-        public RedisCacheProvider(IDatabase cache)
-        {
-            try
-            {
-                _cache = cache;
-                InitSerializer();
-            }
-            catch (Exception ex)
-            {
-
-                throw ex;
-            }
-            
-        }
+        public RedisCacheProvider(StackExchange.Redis.IDatabase cache) { }
 
         /// <summary>
-        /// Initializes the JSON serializer
+        /// Adds an item to the cache using the specified key
         /// </summary>
-        private void InitSerializer()
-        {
-            try
-            {
-                var resolver = new IzendaSerializerContractResolver();
-                resolver.Ignore(typeof(ReportPartDefinition), "ReportPartContent");
-
-                _serializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                _serializerSettings.TypeNameHandling = TypeNameHandling.Objects;
-                _serializerSettings.TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Simple;
-                _serializerSettings.ObjectCreationHandling = ObjectCreationHandling.Replace;
-
-                _serializerSettings.Converters.Add(new DBServerTypeSupportingConverter());
-                _serializerSettings.ContractResolver = resolver;
-
-                _serializer = JsonSerializer.Create(_serializerSettings);
-            }
-            catch (Exception ex)
-            {
-
-                throw ex;
-            }
-        }
-
-        /// <summary>
-        /// Serializes the obj to json
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns> A json string of the object</returns>
-        private string Serialize(object obj)
-        {
-            string value = JsonConvert.SerializeObject(obj, _serializerSettings);
-
-            if (_enableValueCompression)
-            {
-                value = value.Compress();
-            }
-
-            return value;
-        }
-
-        /// <summary>
-        /// Deserializes the json string to the specified type
-        /// </summary>
-        /// <typeparam name="T">The object type</typeparam>
-        /// <param name="serialized">The serialized object</param>
-        /// <returns>THe deserialized object</returns>
-        private T Deserialize<T>(string serialized)
-        {
-            if (_enableValueCompression)
-            {
-                using (StreamReader stream = serialized.DecompressToStreamReader())
-                using (JsonReader reader = new JsonTextReader(stream))
-                {
-                    try
-                    {
-                        return _serializer.Deserialize<T>(reader);
-                    }
-                    catch (Exception ex)
-                    {
-                        Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
-                    }
-                }
-            }
-
-            return JsonConvert.DeserializeObject<T>(serialized, _serializerSettings);
-        }
-
-        /// <summary>
-        /// Adds an item to the cache using the specified key.
-        /// </summary>
-        /// <param name="key"> The key </param>
-        /// <param name="value"> The value </param>
+        /// <param name="key">The key</param>
+        /// <param name="value">The value</param>
         public void Add<T>(string key, T value)
         {
-            try
-            {
-                _cache.StringSet(key, Serialize(value));
-            }
-            catch (Exception ex)
-            {
-                Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
-            }
+            RedisCache.Set(key, value);
         }
 
         /// <summary>
         /// Adds an item to the cache using the specified key and sets an expiration
         /// </summary>
-        /// <param name="key"> The key </param>
-        /// <param name="value"> The value</param>
-        /// <param name="expiration"> The expiration </param>
+        /// <param name="key">The key</param>
+        /// <param name="value">The value</param>
+        /// <param name="expiration">The expiration</param>
         public void AddWithExactLifetime(string key, object value, TimeSpan expiration)
         {
-            try
-            {
-                _cache.StringSet(key, Serialize(value), expiration);
-            }
-            catch (Exception ex)
-            {
-                Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
-            }
+            RedisCache.SetWithLifetime(key, value, expiration);
         }
 
         /// <summary>
         /// Adds an item to the cache using the specified key and sets a sliding expiration
         /// </summary>
-        /// <param name="key"> The key </param>
-        /// <param name="value"> The value</param>
-        /// <param name="expiration"> The expiration </param>
+        /// <param name="key">The key</param>
+        /// <param name="value">The value</param>
+        /// <param name="expiration">The expiration</param>
         public void AddWithSlidingLifetime(string key, object value, TimeSpan expiration)
         {
             AddWithExactLifetime(key, value, expiration);
@@ -172,11 +69,11 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <summary>
         /// Checks if the cache contains the given key
         /// </summary>
-        /// <param name="key"> The key</param>
-        /// <returns>true if the cache contains the key, false otherwise</returns>
+        /// <param name="key">The key</param>
+        /// <returns>Whether the cache contains the key</returns>
         public bool Contains(string key)
         {
-            return _cache.KeyExists(key);
+            return RedisCache.Contains(key);
         }
 
         /// <summary>
@@ -184,14 +81,10 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// </summary>
         /// <typeparam name="T">The object type</typeparam>
         /// <param name="key">The key</param>
-        /// <returns></returns>
+        /// <returns>The value</returns>
         public T Get<T>(string key)
         {
-            var result = _cache.StringGet(key);
-            if (result.IsNullOrEmpty)
-                return default(T);
-
-            return Deserialize<T>(result);
+            return RedisCache.Get<T>(key);
         }
 
         /// <summary>
@@ -200,14 +93,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <param name="key">The key</param>
         public void Remove(string key)
         {
-            try
-            {
-                _cache.KeyDelete(key);
-            }
-            catch (Exception ex)
-            {
-                Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
-            }
+            RedisCache.Remove(key);
         }
 
         /// <summary>
@@ -216,19 +102,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <param name="pattern">The pattern. </param>
         public void RemoveKeyWithPattern(string pattern)
         {
-            var keysToRemove = _server.Keys(_cache.Database, $"*{pattern}*").ToArray();
-
-            try
-            {
-                foreach (var key in keysToRemove)
-                {
-                    _cache.KeyDelete(key);
-                }
-            }
-            catch (Exception ex)
-            {
-                Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
-            }
+            RedisCache.RemoveWithPattern(pattern);
         }
 
         /// <summary>
@@ -283,16 +157,9 @@ namespace Izenda.BI.CacheProvider.RedisCache
         {
             var newValue = executor();
 
-            try
+            if (newValue != null)
             {
-                if (newValue != null)
-                {
-                    _cache.StringSet(key, Serialize(newValue), expiration);
-                }
-            }
-            catch (Exception ex)
-            {
-                Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
+                RedisCache.SetWithLifetime(key, newValue, expiration);
             }
 
             return newValue;
@@ -309,27 +176,20 @@ namespace Izenda.BI.CacheProvider.RedisCache
         {
             var result = Get<T>(key);
 
-            if (EqualityComparer<T>.Default.Equals(result, default(T)))
+            if (EqualityComparer<T>.Default.Equals(result, default))
             {
-                try
+                result = Get<T>(key);
+
+                if (EqualityComparer<T>.Default.Equals(result, default))
                 {
-                    result = Get<T>(key);
+                    var newValue = executor();
 
-                    if (EqualityComparer<T>.Default.Equals(result, default(T)))
-                    {
-                        var newValue = executor();
-
-                        result = newValue;
-                    }
-
-                    if (result != null)
-                    {
-                        addItemToCache(key, result, expiration);
-                    }
+                    result = newValue;
                 }
-                catch (Exception ex)
+
+                if (result != null)
                 {
-                    Trace.Write(string.Format(AppConstants.ExceptionTemplate, ex.ToString()));
+                    addItemToCache(key, result, expiration);
                 }
             }
 
