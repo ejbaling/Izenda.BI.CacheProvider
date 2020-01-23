@@ -1,13 +1,14 @@
-﻿using Izenda.BI.Cache.Contracts;
+﻿using Izenda.BI.Cache;
+using Izenda.BI.Cache.Contracts;
 using Izenda.BI.Cache.Metadata;
 using Izenda.BI.Cache.Metadata.Constants;
 using Izenda.BI.Core;
 using Izenda.BI.DataAdaptor;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,11 +19,22 @@ namespace Izenda.BI.CacheProvider.RedisCache
     [ExportMetadata("CacheStoreType", CacheType.DataCache)]
     public class RedisCacheDataStore : RedisCacheStore
     {
+        private readonly RedisCache redisCache;
+
         public RedisCacheDataStore() 
             : base(CacheConfiguration.Instance.CurrentSetting.IsEnableDataCache)
         {
+            redisCache = new RedisCache(new JsonSerializerSettings
+            {
+                DateTimeZoneHandling = DateTimeZoneHandling.Unspecified,
+                NullValueHandling = NullValueHandling.Ignore,
+                Converters = new List<JsonConverter> { new CacheDataConverter() }
+            });
+
             this.SetTimeToLive(CacheConfiguration.Instance.CurrentSetting.DataCacheTTL);
         }
+
+        protected override RedisCache RedisCache => redisCache;
 
         public override CacheType CacheType => CacheType.DataCache;
 

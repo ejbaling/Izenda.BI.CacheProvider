@@ -1,47 +1,42 @@
-﻿using Izenda.BI.CacheProvider.RedisCache.Serializer;
-using Izenda.BI.CacheProvider.RedisCache.Utilities;
-using Izenda.BI.Framework.Converters;
+﻿using Izenda.BI.CacheProvider.RedisCache.Utilities;
 using log4net;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Izenda.BI.CacheProvider.RedisCache
 {
+    /// <summary>
+    /// The Redis Cache
+    /// </summary>
     public class RedisCache
     {
-        private static RedisCache instance;
         private readonly IDatabase cache;
         private readonly IServer server;
         private readonly JsonSerializerSettings serializerSettings;
         private readonly JsonSerializer serializer;
         private readonly ILog logger;
 
-        private RedisCache()
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RedisCache"/> class
+        /// </summary>
+        /// <param name="serializerSettings">The serializer settings</param>
+        public RedisCache(JsonSerializerSettings serializerSettings)
         {
             cache = RedisHelper.Database;
             server = RedisHelper.Server;
-            serializerSettings = new JsonSerializerSettings
-            {
-                DateTimeZoneHandling = DateTimeZoneHandling.Unspecified,
-                NullValueHandling = NullValueHandling.Ignore,
-                ObjectCreationHandling = ObjectCreationHandling.Replace,
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                Converters = new List<JsonConverter> { new ReportPartContentConverter(), new DBServerTypeSupportingConverter() }
-            };
+            this.serializerSettings = serializerSettings;
             serializer = JsonSerializer.Create(serializerSettings);
             logger = LogManager.GetLogger(this.GetType());
         }
 
-        public static RedisCache Instance
-        {
-            get { return instance ?? (instance = new RedisCache()); }
-        }
-
+        /// <summary>
+        /// Gets the key's value
+        /// </summary>
+        /// <typeparam name="T">The type of the value</typeparam>
+        /// <param name="key">The key</param>
+        /// <returns>The value</returns>
         public T Get<T>(string key)
         {
             try
@@ -59,6 +54,12 @@ namespace Izenda.BI.CacheProvider.RedisCache
             }
         }
 
+        /// <summary>
+        /// Gets the key's value
+        /// </summary>
+        /// <param name="key">The key</param>
+        /// <param name="type">The type of the value</param>
+        /// <returns>The value</returns>
         public object Get(string key, Type type)
         {
             try
@@ -76,6 +77,12 @@ namespace Izenda.BI.CacheProvider.RedisCache
             }
         }
 
+        /// <summary>
+        /// Sets the key and it's value
+        /// </summary>
+        /// <typeparam name="T">The type of the value</typeparam>
+        /// <param name="key">The key</param>
+        /// <param name="value">The value</param>
         public void Set<T>(string key, T value)
         {
             try
@@ -89,6 +96,12 @@ namespace Izenda.BI.CacheProvider.RedisCache
             }
         }
 
+        /// <summary>
+        /// Sets the key and it's value with a lifetime
+        /// </summary>
+        /// <param name="key">The key</param>
+        /// <param name="value">The value</param>
+        /// <param name="expiration">The lifetime expiration</param>
         public void SetWithLifetime(string key, object value, TimeSpan expiration)
         {
             try
@@ -102,6 +115,11 @@ namespace Izenda.BI.CacheProvider.RedisCache
             }
         }
 
+        /// <summary>
+        /// Checks if the cache contains the key
+        /// </summary>
+        /// <param name="key">The key</param>
+        /// <returns>Whether or not the key is present</returns>
         public bool Contains(string key)
         {
             try
@@ -115,6 +133,10 @@ namespace Izenda.BI.CacheProvider.RedisCache
             }
         }
 
+        /// <summary>
+        /// Removes the key
+        /// </summary>
+        /// <param name="key">The key</param>
         public void Remove(string key)
         {
             try
@@ -127,6 +149,10 @@ namespace Izenda.BI.CacheProvider.RedisCache
             }
         }
 
+        /// <summary>
+        /// Removes any key that matches the pattern
+        /// </summary>
+        /// <param name="pattern">The pattern</param>
         public void RemoveWithPattern(string pattern)
         {
             try
@@ -143,20 +169,45 @@ namespace Izenda.BI.CacheProvider.RedisCache
             }
         }
 
+        /// <summary>
+        /// Serializes the object
+        /// </summary>
+        /// <param name="value">The value</param>
+        /// <returns>The serialized string</returns>
         private string Serialize(object value)
         {
             var json = JsonConvert.SerializeObject(value, serializerSettings);
-            return json;
+            return json.Compress();
         }
 
+        /// <summary>
+        /// Deserializes the string
+        /// </summary>
+        /// <typeparam name="T">The type of the outputted object</typeparam>
+        /// <param name="serialized">The serialized string</param>
+        /// <returns>The outputted and deserialized object</returns>
         private T Deserialize<T>(string serialized)
         {
-            return JsonConvert.DeserializeObject<T>(serialized, serializerSettings);
+            using (var stream = serialized.DecompressToStreamReader())
+            using (JsonReader reader = new JsonTextReader(stream))
+            {
+                return serializer.Deserialize<T>(reader);
+            }
         }
 
+        /// <summary>
+        /// Deserializes the string
+        /// </summary>
+        /// <param name="serialized">The serialized string</param>
+        /// <param name="type">he type of the outputted object</param>
+        /// <returns>The outputted and deserialized object</returns>
         private object Deserialize(string serialized, Type type)
         {
-            return JsonConvert.DeserializeObject(serialized, type, serializerSettings);
+            using (var stream = serialized.DecompressToStreamReader())
+            using (JsonReader reader = new JsonTextReader(stream))
+            {
+                return serializer.Deserialize(reader, type);
+            }
         }
     }
 }

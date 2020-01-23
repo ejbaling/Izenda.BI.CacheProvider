@@ -13,15 +13,13 @@ using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Izenda.BI.CacheProvider.RedisCache
 {
     public abstract class RedisCacheStore : CacheStore, ICacheStore
     {
-        protected ISystemRepository Repository { get; }
+        protected readonly ISystemRepository Repository;
 
         protected RedisCacheStore(bool isEnabled)
             : base(isEnabled)
@@ -33,20 +31,22 @@ namespace Izenda.BI.CacheProvider.RedisCache
                 ExecuteRestoreCacheDataJob();
         }
 
+        protected abstract RedisCache RedisCache { get; }
+
         public CacheItemContainer Get<T>(string key)
         {
-            return RedisCache.Instance.Get<CacheItemContainer<T>>(key);
+            return RedisCache.Get<CacheItemContainer<T>>(key);
         }
 
         public void Remove(string key)
         {
-            RedisCache.Instance.Remove(key);
+            RedisCache.Remove(key);
         }
 
         public void Set(string key, CacheItemContainer data)
         {
             if (isEnabled)
-                RedisCache.Instance.Set(key, data);
+                RedisCache.Set(key, data);
 
             UpdateCacheItems(key, data);
         }
@@ -54,9 +54,9 @@ namespace Izenda.BI.CacheProvider.RedisCache
         public bool TryGetValue<T>(string key, out CacheItemContainer data)
         {
             data = null;
-            if (RedisCache.Instance.Contains(key))
+            if (RedisCache.Contains(key))
             {
-                data = RedisCache.Instance.Get<CacheItemContainer<T>>(key);
+                data = RedisCache.Get<CacheItemContainer<T>>(key);
                 if (data == null || data.IsExpired(TimeToLive))
                 {
                     data = null;
@@ -72,14 +72,14 @@ namespace Izenda.BI.CacheProvider.RedisCache
         public bool TryGetValue(string key, Type type, out CacheItemContainer data)
         {
             data = null;
-            if (RedisCache.Instance.Contains(key))
+            if (RedisCache.Contains(key))
             {
                 var genericContainerType = genericCacheItemContainer.GetOrAdd(type, t =>
                 {
                     return typeof(CacheItemContainer<>).MakeGenericType(t);
                 });
 
-                data = RedisCache.Instance.Get(key, genericContainerType) as CacheItemContainer;
+                data = RedisCache.Get(key, genericContainerType) as CacheItemContainer;
                 if (data == null || data.IsExpired(TimeToLive))
                 {
                     data = null;
@@ -129,7 +129,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
                 {
                     foreach (var cacheMeta in expiredItems)
                     {
-                        RedisCache.Instance.Remove(cacheMeta.CacheKey);
+                        RedisCache.Remove(cacheMeta.CacheKey);
                         cacheMeta.IsRemoved = true;
                     }
                 }

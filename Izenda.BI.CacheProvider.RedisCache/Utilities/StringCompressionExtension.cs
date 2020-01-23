@@ -5,23 +5,26 @@ using System.Text;
 
 namespace Izenda.BI.CacheProvider.RedisCache.Utilities
 {
+    /// <summary>
+    /// Extensions for string compression
+    /// </summary>
     public static class StringCompressionExtension
     {
         /// <summary>
         /// Compressess the string
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <param name="value">The original value</param>
+        /// <returns>The compressed value</returns>
         public static string Compress(this string value)
         {
-            byte[] stringBytes = Encoding.UTF8.GetBytes(value);
-            string newValue = "";
+            var inputBytes = Encoding.UTF8.GetBytes(value);
+            var newValue = string.Empty;
 
             using (var outputStream = new MemoryStream())
             {
                 using (var gzipStream = new GZipStream(outputStream, CompressionMode.Compress))
                 {
-                    gzipStream.Write(stringBytes, 0, stringBytes.Length);
+                    gzipStream.Write(inputBytes, 0, inputBytes.Length);
                 }
 
                 var outputBytes = outputStream.ToArray();
@@ -34,12 +37,12 @@ namespace Izenda.BI.CacheProvider.RedisCache.Utilities
         /// <summary>
         /// Decompresses the string
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <param name="value">The compressed value</param>
+        /// <returns>The original value</returns>
         public static string Decompress(this string value)
         {
-            byte[] inputBytes = Convert.FromBase64String(value);
-            string newValue = "";
+            var inputBytes = Convert.FromBase64String(value);
+            var newValue = string.Empty;
 
             using (var inputStream = new MemoryStream(inputBytes))
             using (var gzipStream = new GZipStream(inputStream, CompressionMode.Decompress))
@@ -52,13 +55,13 @@ namespace Izenda.BI.CacheProvider.RedisCache.Utilities
         }
 
         /// <summary>
-        /// Returns a StreamReader from the compressed string
+        /// Decompresses the string into a stream reader
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <param name="value">The compressed value</param>
+        /// <returns>The original value's stream reader</returns>
         public static StreamReader DecompressToStreamReader(this string value)
         {
-            byte[] inputBytes = Convert.FromBase64String(value);
+            var inputBytes = Convert.FromBase64String(value);
 
             MemoryStream inputStream = new MemoryStream(inputBytes);
             GZipStream gzipStream = new GZipStream(inputStream, CompressionMode.Decompress);

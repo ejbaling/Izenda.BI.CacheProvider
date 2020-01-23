@@ -34,15 +34,11 @@ v2.0.0 of the RedisCacheProvider utilizes compression of the Redis cache values.
 ```
 <configuration>
   <configSections>
-    <section name="evoPdfSettings" type="Izenda.BI.Framework.Models.Exporting.EvopdfConfiguration" />
-    
+  
     <!--Redis cache-->
     <section name="redisCacheSettings" type="Izenda.BI.CacheProvider.RedisCache.RedisCacheConfiguration" />
      
   </configSections>
-  <evoPdfSettings cloudEnable="false">
-      <azureCloudService server="" port="" servicePassword="" />
-  </evoPdfSettings>
 
   <!--Redis Cache Provider-->
   <redisCacheSettings connectionString="127.0.0.1:6379" additionalOptions="abortConnect=false"/>

@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Composition;
 using Izenda.BI.Cache.Contracts;
 using Izenda.BI.Cache.Metadata.Constants;
 using Izenda.BI.Core;
+using Izenda.BI.Framework.Constants;
 
 namespace Izenda.BI.CacheProvider.RedisCache
 {
@@ -15,11 +14,16 @@ namespace Izenda.BI.CacheProvider.RedisCache
     [ExportMetadata("CacheStoreType", CacheType.SystemCache)]
     public class RedisCacheSystemStore : RedisCacheStore
     {
+        private readonly RedisCache redisCache;
+
         public RedisCacheSystemStore()
             : base(true)
         {
+            redisCache = new RedisCache(IzendaJsonSerializerSettings.CacheSettings);
             this.SetTimeToLive(CacheConfiguration.Instance.CurrentSetting.SystemCacheTTL);
         }
+
+        protected override RedisCache RedisCache => redisCache;
 
         public override CacheType CacheType => CacheType.SystemCache;
 

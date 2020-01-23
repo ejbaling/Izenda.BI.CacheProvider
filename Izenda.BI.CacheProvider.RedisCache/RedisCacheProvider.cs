@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Izenda.BI.CacheProvider.RedisCache.Serializer;
+using Izenda.BI.Framework.Converters;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 
@@ -10,39 +13,54 @@ namespace Izenda.BI.CacheProvider.RedisCache
     [Export(typeof(ICacheProvider))]
     public class RedisCacheProvider : ICacheProvider, IDisposable
     {
+        private readonly RedisCache RedisCache;
         private bool _disposed = false;
 
-        public RedisCacheProvider() { }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RedisCacheProvider"/> class
+        /// </summary>
+        public RedisCacheProvider()
+        {
+            RedisCache = new RedisCache(new JsonSerializerSettings
+            {
+                DateTimeZoneHandling = DateTimeZoneHandling.Unspecified,
+                NullValueHandling = NullValueHandling.Ignore,
+                ObjectCreationHandling = ObjectCreationHandling.Replace,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Objects,
+                Converters = new List<JsonConverter> { new ReportPartContentConverter(), new DBServerTypeSupportingConverter() }
+            });
+        }
 
         public RedisCacheProvider(StackExchange.Redis.IDatabase cache) { }
 
         /// <summary>
-        /// Adds an item to the cache using the specified key.
+        /// Adds an item to the cache using the specified key
         /// </summary>
-        /// <param name="key"> The key </param>
-        /// <param name="value"> The value </param>
+        /// <param name="key">The key</param>
+        /// <param name="value">The value</param>
         public void Add<T>(string key, T value)
         {
-            RedisCache.Instance.Set(key, value);
+            RedisCache.Set(key, value);
         }
 
         /// <summary>
         /// Adds an item to the cache using the specified key and sets an expiration
         /// </summary>
-        /// <param name="key"> The key </param>
-        /// <param name="value"> The value</param>
-        /// <param name="expiration"> The expiration </param>
+        /// <param name="key">The key</param>
+        /// <param name="value">The value</param>
+        /// <param name="expiration">The expiration</param>
         public void AddWithExactLifetime(string key, object value, TimeSpan expiration)
         {
-            RedisCache.Instance.SetWithLifetime(key, value, expiration);
+            RedisCache.SetWithLifetime(key, value, expiration);
         }
 
         /// <summary>
         /// Adds an item to the cache using the specified key and sets a sliding expiration
         /// </summary>
-        /// <param name="key"> The key </param>
-        /// <param name="value"> The value</param>
-        /// <param name="expiration"> The expiration </param>
+        /// <param name="key">The key</param>
+        /// <param name="value">The value</param>
+        /// <param name="expiration">The expiration</param>
         public void AddWithSlidingLifetime(string key, object value, TimeSpan expiration)
         {
             AddWithExactLifetime(key, value, expiration);
@@ -51,11 +69,11 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <summary>
         /// Checks if the cache contains the given key
         /// </summary>
-        /// <param name="key"> The key</param>
-        /// <returns>true if the cache contains the key, false otherwise</returns>
+        /// <param name="key">The key</param>
+        /// <returns>Whether the cache contains the key</returns>
         public bool Contains(string key)
         {
-            return RedisCache.Instance.Contains(key);
+            return RedisCache.Contains(key);
         }
 
         /// <summary>
@@ -63,10 +81,10 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// </summary>
         /// <typeparam name="T">The object type</typeparam>
         /// <param name="key">The key</param>
-        /// <returns></returns>
+        /// <returns>The value</returns>
         public T Get<T>(string key)
         {
-            return RedisCache.Instance.Get<T>(key);
+            return RedisCache.Get<T>(key);
         }
 
         /// <summary>
@@ -75,7 +93,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <param name="key">The key</param>
         public void Remove(string key)
         {
-            RedisCache.Instance.Remove(key);
+            RedisCache.Remove(key);
         }
 
         /// <summary>
@@ -84,7 +102,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
         /// <param name="pattern">The pattern. </param>
         public void RemoveKeyWithPattern(string pattern)
         {
-            RedisCache.Instance.RemoveWithPattern(pattern);
+            RedisCache.RemoveWithPattern(pattern);
         }
 
         /// <summary>
@@ -141,7 +159,7 @@ namespace Izenda.BI.CacheProvider.RedisCache
 
             if (newValue != null)
             {
-                RedisCache.Instance.SetWithLifetime(key, newValue, expiration);
+                RedisCache.SetWithLifetime(key, newValue, expiration);
             }
 
             return newValue;
