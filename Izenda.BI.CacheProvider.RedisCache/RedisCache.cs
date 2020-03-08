@@ -31,6 +31,15 @@ namespace Izenda.BI.CacheProvider.RedisCache
             logger = LogManager.GetLogger(this.GetType());
         }
 
+        public RedisCache(JsonSerializerSettings serializerSettings, IDatabase cache, IServer server)
+        {
+            this.cache = cache;
+            this.server = server;
+            this.serializerSettings = serializerSettings;
+            serializer = JsonSerializer.Create(serializerSettings);
+            logger = LogManager.GetLogger(this.GetType());
+        }
+
         /// <summary>
         /// Gets the key's value
         /// </summary>

@@ -16,7 +16,7 @@ namespace Izenda.BI.CacheProvider.RedisCache.Test
         [Fact]
         public void AddValueToCache_NoExpiration()
         {
-            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase());
+            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase(), connection.GetServer("127.0.0.1:6379"));
             redisCacheProvider.Add(Key, Value);
             var valueFromCache = redisCacheProvider.Get<string>(Key);
 
@@ -29,7 +29,7 @@ namespace Izenda.BI.CacheProvider.RedisCache.Test
         [Fact]
         public void AddWithExactLifeTime_ExpireIn20Seconds()
         {
-            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase());
+            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase(), connection.GetServer("127.0.0.1:6379"));
             redisCacheProvider.AddWithExactLifetime(Key, Value, new TimeSpan(0, 0, 20));
             var valueFromCache = redisCacheProvider.Get<string>(Key);
 
@@ -42,7 +42,7 @@ namespace Izenda.BI.CacheProvider.RedisCache.Test
         [Fact]
         public void AddWithSlidingLifetime_ExpireAfter20Seconds()
         {
-            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase());
+            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase(), connection.GetServer("127.0.0.1:6379"));
             redisCacheProvider.AddWithSlidingLifetime(Key, Value, new TimeSpan(0, 0, 20));
             var valueFromCache = redisCacheProvider.Get<string>(Key);
 
@@ -55,7 +55,7 @@ namespace Izenda.BI.CacheProvider.RedisCache.Test
         [Fact]
         public void ContainKey_ReturnTrueAfterAddItem()
         {
-            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase());
+            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase(), connection.GetServer("127.0.0.1:6379"));
             redisCacheProvider.Add(Key, Value);
             var containKeyInCache = redisCacheProvider.Contains(Key);
 
@@ -68,7 +68,7 @@ namespace Izenda.BI.CacheProvider.RedisCache.Test
         [Fact]
         public void EnsureCache_ReturnCorrectObject()
         {
-            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase());
+            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase(), connection.GetServer("127.0.0.1:6379"));
             redisCacheProvider.Ensure(Key, () => { return Value; });
             var valueFromCache = redisCacheProvider.Get<string>(Key);
 
@@ -81,7 +81,7 @@ namespace Izenda.BI.CacheProvider.RedisCache.Test
         [Fact]
         public void EnsureCacheWithExactLifeTime_ReturnCorrectObject()
         {
-            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase());
+            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase(), connection.GetServer("127.0.0.1:6379"));
             redisCacheProvider.EnsureWithExactLifetime(Key, new TimeSpan(0, 0, 20), () => { return Value; });
             var valueFromCache = redisCacheProvider.Get<string>(Key);
 
@@ -94,7 +94,7 @@ namespace Izenda.BI.CacheProvider.RedisCache.Test
         [Fact]
         public void EnsureCacheWidthSlidingLifetime_ReturnCorrectObject()
         {
-            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase());
+            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase(), connection.GetServer("127.0.0.1:6379"));
             redisCacheProvider.EnsureWithSlidingLifetime(Key, new TimeSpan(0, 0, 20), () => { return Value; });
             var valueFromCache = redisCacheProvider.Get<string>(Key);
 
@@ -107,7 +107,7 @@ namespace Izenda.BI.CacheProvider.RedisCache.Test
         [Fact]
         public void RemoveCache_ObjectIsRemoved()
         {
-            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase());
+            var redisCacheProvider = new RedisCacheProvider(connection.GetDatabase(), connection.GetServer("127.0.0.1:6379"));
             redisCacheProvider.Add(Key, Value);
             redisCacheProvider.Remove(Key);
 

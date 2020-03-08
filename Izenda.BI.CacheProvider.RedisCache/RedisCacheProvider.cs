@@ -1,9 +1,10 @@
 ﻿using Izenda.BI.CacheProvider.RedisCache.Serializer;
 using Izenda.BI.Framework.Converters;
 using Newtonsoft.Json;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
-using System.Composition;
+using System.ComponentModel.Composition;
 
 namespace Izenda.BI.CacheProvider.RedisCache
 {
@@ -32,7 +33,19 @@ namespace Izenda.BI.CacheProvider.RedisCache
             });
         }
 
-        public RedisCacheProvider(StackExchange.Redis.IDatabase cache) { }
+        public RedisCacheProvider(IDatabase cache) { }
+
+        public RedisCacheProvider(StackExchange.Redis.IDatabase cache, IServer server) {
+            RedisCache = new RedisCache(new JsonSerializerSettings
+            {
+                DateTimeZoneHandling = DateTimeZoneHandling.Unspecified,
+                NullValueHandling = NullValueHandling.Ignore,
+                ObjectCreationHandling = ObjectCreationHandling.Replace,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Objects,
+                Converters = new List<JsonConverter> { new ReportPartContentConverter(), new DBServerTypeSupportingConverter() }
+            }, cache, server);
+        }
 
         /// <summary>
         /// Adds an item to the cache using the specified key
